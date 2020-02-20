@@ -1,6 +1,6 @@
 from random import random, randint, choice
 from copy import deepcopy
-from symbolic import sample, Computer, diff, gencode, mutate, cross
+from symbolic import sample, Computer, diff, gencode, mutate, cross, diff01
 
 a = sample()
 b = sample()
@@ -14,8 +14,8 @@ def noise(data, p=0.1):
 			result.append(d)
 	return result
 
-def randata(length=256):
-	return [randint(0,255) for i in range(length)]
+def randata(length=256, upper=255):
+	return [randint(0, upper) for i in range(length)]
 
 class Pool:
 	def __init__(self):
@@ -35,6 +35,10 @@ class Pool:
 		else:
 			receiver = self.receivers.pop(0)
 
+		DATALEN = 8
+		LIMIT = DATALEN*20
+		NOISE = 0.1
+
 		totalscore = 0
 		TRIES = 10
 		for i in range(TRIES):
@@ -43,23 +47,22 @@ class Pool:
 			# between being sender or receiver, unless it creates noise detector
 			b = Computer(receiver)
 
-			data = randata(16)
+			data = randata(DATALEN)
 
 			a.input = deepcopy(data)
-
-			LIMIT = 1000
 			a.run(LIMIT)
 
-			b.input = noise(a.output, 0)
+			b.input = noise(a.output, NOISE)
 			b.run(LIMIT)
 
-			score = diff(b.output, data)
+			score = diff01(b.output, data)
 
 			totalscore += score
 
 		averagescore = totalscore/TRIES
 		#print(averagescore)
-		if self.bestscore is None or averagescore < self.bestscore:
+		#print(len(self.senders), len(self.receivers))
+		if self.bestscore is None or averagescore <= self.bestscore:
 
 			self.best = [sender, receiver]
 			self.bestscore = averagescore
@@ -67,15 +70,22 @@ class Pool:
 			print("NEW BEST!", self.bestscore, "\n", self.best[0], "\n", self.best[1])
 			print(b.output)
 			print(data)
-			for i in range(5):
+			for i in range(1):
 				other = gencode() if len(self.senders) == 0 else choice(self.senders)
 				self.senders.append(mutate(cross(sender, other)))
 
 				other = gencode() if len(self.receivers) == 0 else choice(self.receivers)
 				self.receivers.append(mutate(cross(receiver, other)))
 
-			self.senders = self.receivers[-100:]
-			self.receivers = self.receivers[:-100:]
+				# Crisscross sender with receivers
+				other = gencode() if len(self.senders) == 0 else choice(self.senders)
+				self.senders.append(mutate(cross(receiver, other)))
+
+				other = gencode() if len(self.receivers) == 0 else choice(self.receivers)
+				self.receivers.append(mutate(cross(sender, other)))
+
+			self.senders = self.receivers[-200:]
+			self.receivers = self.receivers[:-200:]
 
 			self.senders.append(sender)
 			self.receivers.append(receiver)

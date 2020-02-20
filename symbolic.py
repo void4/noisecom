@@ -2,7 +2,7 @@ from random import choice, randint
 #https://esolangs.org/wiki/Symbolic_Brainfuck
 CELL = 256
 
-REGISTERNAMES = "αßπσµδφε"
+REGISTERNAMES = "αßπσ"#"µδφε"
 ALLCOMMANDS = "><+²-½↨⌂.," + REGISTERNAMES
 
 class Computer:
@@ -136,6 +136,23 @@ def diff(a, b):
 	ldelta = abs(lb-la)
 	#print(delta, ldelta)
 	return (1+delta) * (1+ldelta*256**2)#*len(maxi))
+
+def diff01(a, b):
+	la = len(a)
+	lb = len(b)
+
+	maxi = a if la > lb else b
+	mini = a if la <= lb else b
+
+	delta = 0
+
+	for ci, c in enumerate(mini):
+		if c != maxi[ci]:
+			delta += 1
+
+	ldelta = abs(lb-la)
+	#print(delta, ldelta)
+	return (1+delta) * (1+ldelta)#*len(maxi))
 
 def cross(a,b):
 	ml = min(len(a), len(b))
