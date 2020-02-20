@@ -1,8 +1,8 @@
-from random import choice, randint
+from random import choice, randint, random
 #https://esolangs.org/wiki/Symbolic_Brainfuck
 CELL = 256
 
-REGISTERNAMES = "αßπσ"#"µδφε"
+REGISTERNAMES = "αß"#"πσ"#"µδφε"
 ALLCOMMANDS = "><+²-½↨⌂.," + REGISTERNAMES
 
 class Computer:
@@ -91,7 +91,7 @@ class Computer:
 
 		return steps
 
-CODELEN = 140
+CODELEN = 50
 STEPS = 250
 
 def gencode(length=CODELEN):
@@ -157,6 +157,9 @@ def diff01(a, b):
 def cross(a,b):
 	ml = min(len(a), len(b))
 
+	if ml <= 1:
+		return a if len(b)==ml else b
+
 	crossover = randint(0, ml-1)
 
 	first = randint(0,1)
@@ -186,15 +189,15 @@ def sample():
 		rnd += 1
 		return Computer(gencode())
 
-def mutate(code):
+def mutate(code, rate=0.01):
 	m = ""
 	for c in code:
-		r = randint(0,100)
-		if r == 0:
+		r = random()
+		if r < rate:
 			m += choice(ALLCOMMANDS)
-		elif r == 1:
+		elif r < rate*2:
 			pass
-		elif r == 2:
+		elif r < rate*3:
 			m += c + choice(ALLCOMMANDS)
 		else:
 			m += c

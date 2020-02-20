@@ -23,11 +23,11 @@ class Pool:
 
 	def runOnce(self):
 		POPLEN = 100
-		SURVIVE = 20
+		SURVIVE = 10
 
 		DATALEN = 8
-		NOISE = 0.5
-		LIMIT = DATALEN*20/(1-NOISE)
+		NOISE = 0.1
+		LIMIT = DATALEN*40/(1-NOISE)
 
 		for i in range(POPLEN-len(self.population)):
 			self.population.append([gencode(), gencode(), 10**10])
@@ -37,7 +37,7 @@ class Pool:
 			receiver = self.population[i][1]
 
 			totalscore = 0
-			TRIES = 10
+			TRIES = 4
 			for i in range(TRIES):
 				a = Computer(sender)
 				#XXX use same code? well, if it's the same code, it can't differentiate
@@ -62,15 +62,22 @@ class Pool:
 
 		self.population = sorted(self.population, key=lambda x:x[2])
 
-		print(self.population[0][2])
+		print(self.population[0][2], self.population[0][:2])
 		newpopulation = []
 
+		MUTATIONRATE = 0.1
+
 		for i in range(SURVIVE):
-			for j in range(POPLEN//SURVIVE-1):
+			for j in range(POPLEN//SURVIVE-2):
 				other = [gencode(), gencode()] if len(self.population) == 0 else choice(self.population)
-				newsender = mutate(cross(self.population[i][0], other[0]))
-				newreceiver = mutate(cross(self.population[i][1], other[1]))
+				newsender = mutate(cross(self.population[i][0], other[0]), MUTATIONRATE)
+				newreceiver = mutate(cross(self.population[i][1], other[1]), MUTATIONRATE)
 				newpopulation.append([newsender, newreceiver, 10**10])
+			#newpopulation.append(deepcopy(self.population[i]))
+			mutated = deepcopy(self.population[i])
+			mutated[0] = mutate(mutated[0], MUTATIONRATE)
+			mutated[1] = mutate(mutated[1], MUTATIONRATE)
+			newpopulation.append(mutated)
 
 		for i in range(SURVIVE):
 			newpopulation.append([gencode(), gencode(), 10**10])
