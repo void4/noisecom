@@ -151,8 +151,8 @@ def diff01(a, b):
 			delta += 1
 
 	ldelta = abs(lb-la)
-	#print(delta, ldelta)
-	return (1+delta) * (1+ldelta)#*len(maxi))
+	#print(a,b,delta, ldelta)
+	return delta+ldelta#*len(maxi))
 
 def cross(a,b):
 	ml = min(len(a), len(b))

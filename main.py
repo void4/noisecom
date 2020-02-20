@@ -19,79 +19,68 @@ def randata(length=256, upper=255):
 
 class Pool:
 	def __init__(self):
-		self.senders = []
-		self.receivers = []
-		self.best = None
-		self.bestscore = None
+		self.population = []
 
 	def runOnce(self):
-		if len(self.senders) == 0:
-			sender = gencode()
-		else:
-			sender = self.senders.pop(0)
-
-		if len(self.receivers) == 0:
-			receiver = gencode()
-		else:
-			receiver = self.receivers.pop(0)
+		POPLEN = 100
+		SURVIVE = 20
 
 		DATALEN = 8
-		LIMIT = DATALEN*20
-		NOISE = 0.1
+		NOISE = 0.5
+		LIMIT = DATALEN*20/(1-NOISE)
 
-		totalscore = 0
-		TRIES = 10
-		for i in range(TRIES):
-			a = Computer(sender)
-			#XXX use same code? well, if it's the same code, it can't differentiate
-			# between being sender or receiver, unless it creates noise detector
-			b = Computer(receiver)
+		for i in range(POPLEN-len(self.population)):
+			self.population.append([gencode(), gencode(), 10**10])
 
-			data = randata(DATALEN)
+		for i in range(POPLEN):
+			sender = self.population[i][0]
+			receiver = self.population[i][1]
 
-			a.input = deepcopy(data)
-			a.run(LIMIT)
+			totalscore = 0
+			TRIES = 10
+			for i in range(TRIES):
+				a = Computer(sender)
+				#XXX use same code? well, if it's the same code, it can't differentiate
+				# between being sender or receiver, unless it creates noise detector
+				b = Computer(receiver)
 
-			b.input = noise(a.output, NOISE)
-			b.run(LIMIT)
+				data = randata(DATALEN)
 
-			score = diff01(b.output, data)
+				a.input = deepcopy(data)
+				a.run(LIMIT)
 
-			totalscore += score
+				b.input = noise(a.output, NOISE)
+				b.run(LIMIT)
 
-		averagescore = totalscore/TRIES
-		#print(averagescore)
-		#print(len(self.senders), len(self.receivers))
-		if self.bestscore is None or averagescore <= self.bestscore:
+				score = diff01(b.output, data)
 
-			self.best = [sender, receiver]
-			self.bestscore = averagescore
+				totalscore += score
 
-			print("NEW BEST!", self.bestscore, "\n", self.best[0], "\n", self.best[1])
-			print(b.output)
-			print(data)
-			for i in range(1):
-				other = gencode() if len(self.senders) == 0 else choice(self.senders)
-				self.senders.append(mutate(cross(sender, other)))
+			averagescore = totalscore/TRIES
+			#print(averagescore)
+			self.population[i][2] = averagescore
 
-				other = gencode() if len(self.receivers) == 0 else choice(self.receivers)
-				self.receivers.append(mutate(cross(receiver, other)))
+		self.population = sorted(self.population, key=lambda x:x[2])
 
-				# Crisscross sender with receivers
-				other = gencode() if len(self.senders) == 0 else choice(self.senders)
-				self.senders.append(mutate(cross(receiver, other)))
+		print(self.population[0][2])
+		newpopulation = []
 
-				other = gencode() if len(self.receivers) == 0 else choice(self.receivers)
-				self.receivers.append(mutate(cross(sender, other)))
+		for i in range(SURVIVE):
+			for j in range(POPLEN//SURVIVE-1):
+				other = [gencode(), gencode()] if len(self.population) == 0 else choice(self.population)
+				newsender = mutate(cross(self.population[i][0], other[0]))
+				newreceiver = mutate(cross(self.population[i][1], other[1]))
+				newpopulation.append([newsender, newreceiver, 10**10])
 
-			self.senders = self.receivers[-200:]
-			self.receivers = self.receivers[:-200:]
+		for i in range(SURVIVE):
+			newpopulation.append([gencode(), gencode(), 10**10])
 
-			self.senders.append(sender)
-			self.receivers.append(receiver)
+		#print(len(newpopulation))
+		self.population = newpopulation
+
 
 	def run(self):
-		while self.bestscore is None or self.bestscore > 0:
+		while True:#self.population[0][2] > 0
 			self.runOnce()
 
 pool = Pool()
