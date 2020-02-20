@@ -19,21 +19,29 @@ def randata(length=256):
 
 class Pool:
 	def __init__(self):
-		self.population = []
+		self.senders = []
+		self.receivers = []
 		self.best = None
 		self.bestscore = None
 
 	def runOnce(self):
-		if len(self.population) == 0:
-			agentcode = gencode()
+		if len(self.senders) == 0:
+			sender = gencode()
 		else:
-			agentcode = self.population.pop(0)
+			sender = self.senders.pop(0)
+
+		if len(self.receivers) == 0:
+			receiver = gencode()
+		else:
+			receiver = self.receivers.pop(0)
 
 		totalscore = 0
 		TRIES = 10
 		for i in range(TRIES):
-			a = Computer(agentcode)#XXX same code?
-			b = Computer(agentcode)
+			a = Computer(sender)
+			#XXX use same code? well, if it's the same code, it can't differentiate
+			# between being sender or receiver, unless it creates noise detector
+			b = Computer(receiver)
 
 			data = randata(16)
 
@@ -53,22 +61,24 @@ class Pool:
 		#print(averagescore)
 		if self.bestscore is None or averagescore < self.bestscore:
 
-			self.best = agentcode
+			self.best = [sender, receiver]
 			self.bestscore = averagescore
 
-			print("NEW BEST!", self.bestscore, self.best)
+			print("NEW BEST!", self.bestscore, "\n", self.best[0], "\n", self.best[1])
 			print(b.output)
 			print(data)
 			for i in range(5):
-				if len(self.population) == 0:
-					other = gencode()
-				else:
-					other = choice(self.population)
-				self.population.append(mutate(cross(agentcode, other)))
+				other = gencode() if len(self.senders) == 0 else choice(self.senders)
+				self.senders.append(mutate(cross(sender, other)))
 
-			self.population = self.population[-100:]
+				other = gencode() if len(self.receivers) == 0 else choice(self.receivers)
+				self.receivers.append(mutate(cross(receiver, other)))
 
-			self.population.append(agentcode)
+			self.senders = self.receivers[-100:]
+			self.receivers = self.receivers[:-100:]
+
+			self.senders.append(sender)
+			self.receivers.append(receiver)
 
 	def run(self):
 		while self.bestscore is None or self.bestscore > 0:
